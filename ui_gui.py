@@ -3,22 +3,25 @@
 ################################################################################
 ## Form generated from reading UI file 'gui.ui'
 ##
-## Created by: Qt User Interface Compiler version 5.14.1
+## Created by: Qt User Interface Compiler version 6.2.4
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide2.QtCore import (QCoreApplication, QMetaObject, QObject, QPoint,
-    QRect, QSize, QUrl, Qt)
-from PySide2.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont,
-    QFontDatabase, QIcon, QLinearGradient, QPalette, QPainter, QPixmap,
-    QRadialGradient)
-from PySide2.QtWidgets import *
-
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QComboBox, QLabel,
+    QMainWindow, QPushButton, QSizePolicy, QSpinBox,
+    QWidget)
 
 class Ui_gui(object):
     def setupUi(self, gui):
-        if gui.objectName():
+        if not gui.objectName():
             gui.setObjectName(u"gui")
         gui.resize(720, 405)
         gui.setMinimumSize(QSize(720, 405))
@@ -42,7 +45,6 @@ class Ui_gui(object):
         font1 = QFont()
         font1.setPointSize(20)
         font1.setBold(True)
-        font1.setWeight(75)
         self.title_label.setFont(font1)
         self.title_label.setAutoFillBackground(True)
         self.title_label.setAlignment(Qt.AlignCenter)
@@ -63,67 +65,91 @@ class Ui_gui(object):
         self.filter_mode.addItem("")
         self.filter_mode.addItem("")
         self.filter_mode.setObjectName(u"filter_mode")
-        self.filter_mode.setGeometry(QRect(30, 110, 181, 41))
+        self.filter_mode.setGeometry(QRect(20, 110, 191, 31))
         self.filter_mode.setFont(font)
         self.choose = QPushButton(self.centralwidget)
         self.choose.setObjectName(u"choose")
-        self.choose.setGeometry(QRect(30, 70, 91, 31))
+        self.choose.setGeometry(QRect(20, 70, 81, 31))
         self.path = QLabel(self.centralwidget)
         self.path.setObjectName(u"path")
-        self.path.setGeometry(QRect(130, 70, 561, 31))
+        self.path.setGeometry(QRect(110, 70, 601, 31))
         font2 = QFont()
         font2.setPointSize(8)
         self.path.setFont(font2)
+        self.path.setAcceptDrops(False)
+        self.path.setScaledContents(False)
         self.path.setAlignment(Qt.AlignCenter)
+        self.path.setWordWrap(True)
         self.render = QPushButton(self.centralwidget)
         self.render.setObjectName(u"render")
-        self.render.setGeometry(QRect(590, 100, 121, 31))
+        self.render.setGeometry(QRect(610, 110, 51, 31))
         font3 = QFont()
         font3.setPointSize(10)
         font3.setBold(True)
-        font3.setWeight(75)
         self.render.setFont(font3)
         self.before = QLabel(self.centralwidget)
         self.before.setObjectName(u"before")
-        self.before.setGeometry(QRect(0, 160, 360, 240))
+        self.before.setGeometry(QRect(0, 160, 360, 250))
         self.before.setFont(font1)
+        self.before.setScaledContents(True)
         self.before.setAlignment(Qt.AlignCenter)
         self.after = QLabel(self.centralwidget)
         self.after.setObjectName(u"after")
-        self.after.setGeometry(QRect(360, 160, 360, 240))
+        self.after.setGeometry(QRect(360, 160, 360, 250))
         self.after.setFont(font1)
+        self.after.setScaledContents(True)
         self.after.setAlignment(Qt.AlignCenter)
         self.color_mode = QComboBox(self.centralwidget)
         self.color_mode.addItem("")
         self.color_mode.addItem("")
+        self.color_mode.addItem("")
+        self.color_mode.addItem("")
+        self.color_mode.addItem("")
+        self.color_mode.addItem("")
+        self.color_mode.addItem("")
         self.color_mode.setObjectName(u"color_mode")
-        self.color_mode.setGeometry(QRect(250, 110, 71, 41))
+        self.color_mode.setGeometry(QRect(220, 110, 81, 31))
         self.color_mode.setFont(font)
         self.width_limit = QSpinBox(self.centralwidget)
         self.width_limit.setObjectName(u"width_limit")
-        self.width_limit.setGeometry(QRect(360, 110, 91, 41))
+        self.width_limit.setGeometry(QRect(310, 110, 81, 31))
+        self.width_limit.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
+        self.width_limit.setButtonSymbols(QAbstractSpinBox.PlusMinus)
         self.width_limit.setMinimum(1)
         self.width_limit.setMaximum(999999)
+        self.width_limit.setStepType(QAbstractSpinBox.DefaultStepType)
+        self.width_limit.setValue(1)
         self.height_limit = QSpinBox(self.centralwidget)
         self.height_limit.setObjectName(u"height_limit")
-        self.height_limit.setGeometry(QRect(460, 110, 91, 41))
+        self.height_limit.setGeometry(QRect(400, 110, 81, 31))
+        self.height_limit.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
+        self.height_limit.setButtonSymbols(QAbstractSpinBox.PlusMinus)
         self.height_limit.setMinimum(1)
         self.height_limit.setMaximum(999999)
+        self.height_limit.setValue(1)
         self.save = QPushButton(self.centralwidget)
         self.save.setObjectName(u"save")
-        self.save.setGeometry(QRect(590, 130, 121, 31))
+        self.save.setGeometry(QRect(660, 110, 51, 31))
         self.save.setFont(font3)
+        self.open_adjust = QPushButton(self.centralwidget)
+        self.open_adjust.setObjectName(u"open_adjust")
+        self.open_adjust.setGeometry(QRect(490, 110, 111, 31))
+        self.open_adjust.setFont(font3)
         gui.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(gui)
+
+        self.filter_mode.setCurrentIndex(0)
+        self.color_mode.setCurrentIndex(4)
+
 
         QMetaObject.connectSlotsByName(gui)
     # setupUi
 
     def retranslateUi(self, gui):
-        gui.setWindowTitle(QCoreApplication.translate("gui", u"\u795e\u9f99\u56fe\u7247\u5904\u7406 v1.0", None))
+        gui.setWindowTitle(QCoreApplication.translate("gui", u"\u795e\u9f99\u56fe\u7247\u5904\u7406 v1.2", None))
         self.name_label.setText(QCoreApplication.translate("gui", u"by abcdesteve", None))
-        self.title_label.setText(QCoreApplication.translate("gui", u"\u795e\u9f99\u56fe\u7247\u5904\u7406 v1.0", None))
+        self.title_label.setText(QCoreApplication.translate("gui", u"\u795e\u9f99\u56fe\u7247\u5904\u7406 v1.2", None))
         self.filter_mode.setItemText(0, QCoreApplication.translate("gui", u"\u9009\u62e9\u6ee4\u955c", None))
         self.filter_mode.setItemText(1, QCoreApplication.translate("gui", u"BLUR", None))
         self.filter_mode.setItemText(2, QCoreApplication.translate("gui", u"CONTOUR", None))
@@ -142,12 +168,20 @@ class Ui_gui(object):
 
         self.choose.setText(QCoreApplication.translate("gui", u"\u9009\u62e9\u56fe\u7247", None))
         self.path.setText(QCoreApplication.translate("gui", u"\u56fe\u7247\u8def\u5f84", None))
-        self.render.setText(QCoreApplication.translate("gui", u"\u5f00\u59cb\u5904\u7406", None))
+        self.render.setText(QCoreApplication.translate("gui", u"\u9884\u89c8", None))
         self.before.setText(QCoreApplication.translate("gui", u"\u5904\u7406\u524d(\u5df2\u7f29\u653e)", None))
         self.after.setText(QCoreApplication.translate("gui", u"\u5904\u7406\u540e(\u5df2\u7f29\u653e)", None))
-        self.color_mode.setItemText(0, QCoreApplication.translate("gui", u"RGBA", None))
-        self.color_mode.setItemText(1, QCoreApplication.translate("gui", u"L", None))
+        self.color_mode.setItemText(0, QCoreApplication.translate("gui", u"\u4e8c\u503c\u5316", None))
+        self.color_mode.setItemText(1, QCoreApplication.translate("gui", u"1", None))
+        self.color_mode.setItemText(2, QCoreApplication.translate("gui", u"L", None))
+        self.color_mode.setItemText(3, QCoreApplication.translate("gui", u"HSV", None))
+        self.color_mode.setItemText(4, QCoreApplication.translate("gui", u"RGBA", None))
+        self.color_mode.setItemText(5, QCoreApplication.translate("gui", u"CMYK", None))
+        self.color_mode.setItemText(6, QCoreApplication.translate("gui", u"YCbCr", None))
 
-        self.save.setText(QCoreApplication.translate("gui", u"\u4fdd\u5b58\u7ed3\u679c", None))
+        self.width_limit.setPrefix("")
+        self.height_limit.setSuffix("")
+        self.save.setText(QCoreApplication.translate("gui", u"\u4fdd\u5b58", None))
+        self.open_adjust.setText(QCoreApplication.translate("gui", u"\u6253\u5f00\u8c03\u8272\u5668", None))
     # retranslateUi
 

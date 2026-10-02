@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>神龙图片处理 v1.0</string>
+   <string>神龙图片处理 v1.2</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QLabel" name="name_label">
@@ -80,7 +80,6 @@
     <property name="font">
      <font>
       <pointsize>20</pointsize>
-      <weight>75</weight>
       <bold>true</bold>
      </font>
     </property>
@@ -88,7 +87,7 @@
      <bool>true</bool>
     </property>
     <property name="text">
-     <string>神龙图片处理 v1.0</string>
+     <string>神龙图片处理 v1.2</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
@@ -97,16 +96,19 @@
    <widget class="QComboBox" name="filter_mode">
     <property name="geometry">
      <rect>
-      <x>30</x>
+      <x>20</x>
       <y>110</y>
-      <width>181</width>
-      <height>41</height>
+      <width>191</width>
+      <height>31</height>
      </rect>
     </property>
     <property name="font">
      <font>
       <pointsize>10</pointsize>
      </font>
+    </property>
+    <property name="currentIndex">
+     <number>0</number>
     </property>
     <item>
      <property name="text">
@@ -187,9 +189,9 @@
    <widget class="QPushButton" name="choose">
     <property name="geometry">
      <rect>
-      <x>30</x>
+      <x>20</x>
       <y>70</y>
-      <width>91</width>
+      <width>81</width>
       <height>31</height>
      </rect>
     </property>
@@ -200,9 +202,9 @@
    <widget class="QLabel" name="path">
     <property name="geometry">
      <rect>
-      <x>130</x>
+      <x>110</x>
       <y>70</y>
-      <width>561</width>
+      <width>601</width>
       <height>31</height>
      </rect>
     </property>
@@ -211,31 +213,39 @@
       <pointsize>8</pointsize>
      </font>
     </property>
+    <property name="acceptDrops">
+     <bool>false</bool>
+    </property>
     <property name="text">
      <string>图片路径</string>
     </property>
+    <property name="scaledContents">
+     <bool>false</bool>
+    </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
+    </property>
+    <property name="wordWrap">
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QPushButton" name="render">
     <property name="geometry">
      <rect>
-      <x>590</x>
-      <y>100</y>
-      <width>121</width>
+      <x>610</x>
+      <y>110</y>
+      <width>51</width>
       <height>31</height>
      </rect>
     </property>
     <property name="font">
      <font>
       <pointsize>10</pointsize>
-      <weight>75</weight>
       <bold>true</bold>
      </font>
     </property>
     <property name="text">
-     <string>开始处理</string>
+     <string>预览</string>
     </property>
    </widget>
    <widget class="QLabel" name="before">
@@ -244,18 +254,20 @@
       <x>0</x>
       <y>160</y>
       <width>360</width>
-      <height>240</height>
+      <height>250</height>
      </rect>
     </property>
     <property name="font">
      <font>
       <pointsize>20</pointsize>
-      <weight>75</weight>
       <bold>true</bold>
      </font>
     </property>
     <property name="text">
      <string>处理前(已缩放)</string>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
@@ -267,18 +279,20 @@
       <x>360</x>
       <y>160</y>
       <width>360</width>
-      <height>240</height>
+      <height>250</height>
      </rect>
     </property>
     <property name="font">
      <font>
       <pointsize>20</pointsize>
-      <weight>75</weight>
       <bold>true</bold>
      </font>
     </property>
     <property name="text">
      <string>处理后(已缩放)</string>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
@@ -287,10 +301,10 @@
    <widget class="QComboBox" name="color_mode">
     <property name="geometry">
      <rect>
-      <x>250</x>
+      <x>220</x>
       <y>110</y>
-      <width>71</width>
-      <height>41</height>
+      <width>81</width>
+      <height>31</height>
      </rect>
     </property>
     <property name="font">
@@ -298,9 +312,17 @@
       <pointsize>10</pointsize>
      </font>
     </property>
+    <property name="currentIndex">
+     <number>4</number>
+    </property>
     <item>
      <property name="text">
-      <string>RGBA</string>
+      <string>二值化</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>1</string>
      </property>
     </item>
     <item>
@@ -308,31 +330,75 @@
       <string>L</string>
      </property>
     </item>
+    <item>
+     <property name="text">
+      <string>HSV</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>RGBA</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>CMYK</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>YCbCr</string>
+     </property>
+    </item>
    </widget>
    <widget class="QSpinBox" name="width_limit">
     <property name="geometry">
      <rect>
-      <x>360</x>
+      <x>310</x>
       <y>110</y>
-      <width>91</width>
-      <height>41</height>
+      <width>81</width>
+      <height>31</height>
      </rect>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+    </property>
+    <property name="buttonSymbols">
+     <enum>QAbstractSpinBox::PlusMinus</enum>
+    </property>
+    <property name="prefix">
+     <string/>
     </property>
     <property name="minimum">
      <number>1</number>
     </property>
     <property name="maximum">
      <number>999999</number>
+    </property>
+    <property name="stepType">
+     <enum>QAbstractSpinBox::DefaultStepType</enum>
+    </property>
+    <property name="value">
+     <number>1</number>
     </property>
    </widget>
    <widget class="QSpinBox" name="height_limit">
     <property name="geometry">
      <rect>
-      <x>460</x>
+      <x>400</x>
       <y>110</y>
-      <width>91</width>
-      <height>41</height>
+      <width>81</width>
+      <height>31</height>
      </rect>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+    </property>
+    <property name="buttonSymbols">
+     <enum>QAbstractSpinBox::PlusMinus</enum>
+    </property>
+    <property name="suffix">
+     <string/>
     </property>
     <property name="minimum">
      <number>1</number>
@@ -340,25 +406,46 @@
     <property name="maximum">
      <number>999999</number>
     </property>
+    <property name="value">
+     <number>1</number>
+    </property>
    </widget>
    <widget class="QPushButton" name="save">
     <property name="geometry">
      <rect>
-      <x>590</x>
-      <y>130</y>
-      <width>121</width>
+      <x>660</x>
+      <y>110</y>
+      <width>51</width>
       <height>31</height>
      </rect>
     </property>
     <property name="font">
      <font>
       <pointsize>10</pointsize>
-      <weight>75</weight>
       <bold>true</bold>
      </font>
     </property>
     <property name="text">
-     <string>保存结果</string>
+     <string>保存</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="open_adjust">
+    <property name="geometry">
+     <rect>
+      <x>490</x>
+      <y>110</y>
+      <width>111</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>打开调色器</string>
     </property>
    </widget>
   </widget>
