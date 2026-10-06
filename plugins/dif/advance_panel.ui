@@ -1,0 +1,535 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AdvancePanel</class>
+ <widget class="QWidget" name="AdvancePanel">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>757</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout">
+   <item>
+    <layout class="QFormLayout" name="form_reg">
+     <property name="labelAlignment">
+      <set>Qt::AlignVCenter</set>
+     </property>
+     <property name="horizontalSpacing">
+      <number>2</number>
+     </property>
+     <property name="verticalSpacing">
+      <number>4</number>
+     </property>
+     <item row="0" column="0" colspan="2">
+      <widget class="StrongBodyLabel" name="lbl_grp_reg">
+       <property name="text">
+        <string>特征匹配（粗配准）</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="BodyLabel" name="lbl_feature">
+       <property name="text">
+        <string>特征算法</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="ComboBox" name="combo_feature">
+       <property name="toolTip">
+        <string>作用：决定用哪种局部特征做匹配。
+SIFT：最稳，通用默认。适合纹理丰富、光照变化的场景。
+AKAZE：速度快，对弱纹理/模糊更友好，适合桌面纯色物体多的场景。
+ORB：最快但最弱，只在其他算法太慢时用。
+默认 SIFT：综合最好。</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="BodyLabel" name="lbl_ratio">
+       <property name="text">
+        <string>Lowe 比值</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="CompactDoubleSpinBox" name="spin_ratio">
+       <property name="toolTip">
+        <string>作用：过滤误匹配。仅保留「最近邻距离 &lt; ratio × 次近邻距离」的匹配。
+调大 (0.80~0.90)：匹配更多但误匹配增多 → 适合纹理弱、匹配数不足
+调小 (0.60~0.70)：匹配更严但可能漏 → 适合纹理丰富、误匹配多
+默认 0.72：通用平衡点。</string>
+       </property>
+       <property name="decimals">
+        <number>2</number>
+       </property>
+       <property name="minimum">
+        <double>0.400000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>1.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.010000000000000</double>
+       </property>
+       <property name="value">
+        <double>0.720000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="BodyLabel" name="lbl_ransac">
+       <property name="text">
+        <string>RANSAC 阈值</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="CompactDoubleSpinBox" name="spin_ransac">
+       <property name="toolTip">
+        <string>作用：MAGSAC 判定内点的像素误差上限。
+调大 (5~10)：容忍更大几何误差，但可能把错误匹配当内点。
+调小 (1~2)：更严格，只保留高精度匹配，可能内点不足。
+默认 3.0：像素级通用的稳妥值。</string>
+       </property>
+       <property name="suffix">
+        <string> px</string>
+       </property>
+       <property name="decimals">
+        <number>1</number>
+       </property>
+       <property name="minimum">
+        <double>0.500000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>20.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.500000000000000</double>
+       </property>
+       <property name="value">
+        <double>3.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="BodyLabel" name="lbl_min_match">
+       <property name="text">
+        <string>最小匹配数</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="CompactSpinBox" name="spin_min_match">
+       <property name="toolTip">
+        <string>作用：匹配数低于此值判定配准失败。
+调大：更保守，避免不靠谱的配准，但可能误报失败。
+调小：更宽松，但低质量配准也可能通过。
+默认 12：平面场景下经验值。</string>
+       </property>
+       <property name="minimum">
+        <number>4</number>
+       </property>
+       <property name="maximum">
+        <number>200</number>
+       </property>
+       <property name="value">
+        <number>12</number>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0">
+      <widget class="BodyLabel" name="lbl_min_inlier">
+       <property name="text">
+        <string>内点率下限</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="CompactDoubleSpinBox" name="spin_min_inlier">
+       <property name="toolTip">
+        <string>作用：RANSAC 内点占全部匹配的比例低于此值，判定失败。
+调大 (0.4~0.6)：非常严格，只接受高质量配准。
+调小 (0.1~0.2)：宽松，适合杂乱场景但可能误判。
+默认 0.25：平衡点。</string>
+       </property>
+       <property name="decimals">
+        <number>2</number>
+       </property>
+       <property name="minimum">
+        <double>0.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>1.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.050000000000000</double>
+       </property>
+       <property name="value">
+        <double>0.250000000000000</double>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QFormLayout" name="form_tps">
+     <property name="labelAlignment">
+      <set>Qt::AlignVCenter</set>
+     </property>
+     <property name="horizontalSpacing">
+      <number>2</number>
+     </property>
+     <property name="verticalSpacing">
+      <number>4</number>
+     </property>
+     <item row="1" column="0" colspan="2">
+      <widget class="CheckBox" name="chk_tps">
+       <property name="toolTip">
+        <string>作用：在全局单应基础上做非刚性变形，吸收局部视差（如桌面上的立体物）。
+开启：能对齐有厚度的物体，但边缘可能有残影。
+关闭：只用全局单应，速度快，非平面区域会有重影。</string>
+       </property>
+       <property name="text">
+        <string>启用 TPS 变形</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="BodyLabel" name="lbl_tps_ctrl">
+       <property name="text">
+        <string>控制点上限</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="CompactSpinBox" name="spin_tps_ctrl">
+       <property name="toolTip">
+        <string>作用：参与拟合 TPS 的控制点数量上限。
+调大 (300~500)：变形更贴合局部细节，但更慢、更易过拟合噪声。
+调小 (50~100)：变形更平滑，但可能吸收不掉局部视差。
+默认 150：细节和稳定性平衡。</string>
+       </property>
+       <property name="minimum">
+        <number>8</number>
+       </property>
+       <property name="maximum">
+        <number>1000</number>
+       </property>
+       <property name="value">
+        <number>150</number>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="BodyLabel" name="lbl_tps_smooth">
+       <property name="text">
+        <string>平滑系数</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="CompactDoubleSpinBox" name="spin_tps_smooth">
+       <property name="toolTip">
+        <string>作用：TPS 拟合时对控制点的放松程度。
+0：严格穿过所有控制点（易受噪声影响，产生波纹）。
+0.1~1：允许小幅偏离（推荐）。
+&gt;5：变形非常平滑，几乎退化为全局形变。
+默认 0.10：轻微抗噪。</string>
+       </property>
+       <property name="decimals">
+        <number>2</number>
+       </property>
+       <property name="minimum">
+        <double>0.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>20.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.050000000000000</double>
+       </property>
+       <property name="value">
+        <double>0.100000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="BodyLabel" name="lbl_tps_step">
+       <property name="text">
+        <string>求值步长</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="CompactSpinBox" name="spin_tps_step">
+       <property name="toolTip">
+        <string>作用：TPS 在粗网格上求值再上采样，控制计算精度/速度。
+调小 (4~8)：更精确，但更慢。
+调大 (32~64)：更快，但可能损失细节。
+默认 16：速度与精度平衡。</string>
+       </property>
+       <property name="suffix">
+        <string> px</string>
+       </property>
+       <property name="minimum">
+        <number>4</number>
+       </property>
+       <property name="maximum">
+        <number>128</number>
+       </property>
+       <property name="singleStep">
+        <number>4</number>
+       </property>
+       <property name="value">
+        <number>16</number>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0" colspan="2">
+      <widget class="StrongBodyLabel" name="lbl_grp_tps">
+       <property name="text">
+        <string>TPS 非刚性（精配准）</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QFormLayout" name="form_photo">
+     <property name="labelAlignment">
+      <set>Qt::AlignVCenter</set>
+     </property>
+     <property name="horizontalSpacing">
+      <number>2</number>
+     </property>
+     <property name="verticalSpacing">
+      <number>4</number>
+     </property>
+     <item row="0" column="0" colspan="2">
+      <widget class="StrongBodyLabel" name="lbl_grp_photo">
+       <property name="text">
+        <string>光度归一化</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="BodyLabel" name="lbl_photo_method">
+       <property name="text">
+        <string>方法</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="ComboBox" name="combo_photo_method">
+       <property name="toolTip">
+        <string>作用：消除两图曝光/色彩差异。
+linear：逐通道线性拟合 B≈kA+t。简单快速，适合整体亮度和增益差异。
+reinhard：Lab 空间均值/标准差迁移。适合色彩偏移明显时，效果更自然。
+hist_match：直方图匹配。对整体色调最彻底，但可能改变局部对比度。
+默认 linear：先试最简单，不够再升级。</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QFormLayout" name="form_diff">
+     <property name="labelAlignment">
+      <set>Qt::AlignVCenter</set>
+     </property>
+     <property name="horizontalSpacing">
+      <number>2</number>
+     </property>
+     <property name="verticalSpacing">
+      <number>4</number>
+     </property>
+     <item row="0" column="0" colspan="2">
+      <widget class="StrongBodyLabel" name="lbl_grp_diff">
+       <property name="text">
+        <string>变化检测</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="BodyLabel" name="lbl_lab_thresh">
+       <property name="text">
+        <string>Lab 距离阈值</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="CompactDoubleSpinBox" name="spin_lab_thresh">
+       <property name="toolTip">
+        <string>作用：判定「亮度/颜色发生显著变化」的阈值。
+调大 (35~60)：只标记明显变化，减少误报。
+调小 (10~20)：更敏感，可能把光照波动误判为变化。
+默认 25：中等敏感度。</string>
+       </property>
+       <property name="decimals">
+        <number>1</number>
+       </property>
+       <property name="minimum">
+        <double>1.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>120.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>1.000000000000000</double>
+       </property>
+       <property name="value">
+        <double>25.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="BodyLabel" name="lbl_ssim_thresh">
+       <property name="text">
+        <string>SSIM 阈值</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="CompactDoubleSpinBox" name="spin_ssim_thresh">
+       <property name="toolTip">
+        <string>作用：SSIM 低于此值判定「局部结构发生变化」（纹理修改）。
+调大 (0.75~0.9)：非常敏感，轻微错位也会被标为纹理变化。
+调小 (0.4~0.5)：只标记结构大幅变化。
+默认 0.60：平衡点。配准不够准时建议调大以捕捉更多纹理差异。</string>
+       </property>
+       <property name="decimals">
+        <number>2</number>
+       </property>
+       <property name="minimum">
+        <double>0.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>1.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.050000000000000</double>
+       </property>
+       <property name="value">
+        <double>0.600000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="BodyLabel" name="lbl_min_area">
+       <property name="text">
+        <string>最小变化面积</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="CompactSpinBox" name="spin_min_area">
+       <property name="toolTip">
+        <string>作用：变化区域像素面积低于此值会被丢弃（过滤噪声）。
+调大 (200~1000)：只保留大块变化，画面干净但可能漏小物体。
+调小 (10~50)：更敏感，但会有很多零碎误报。
+默认 80：桌面场景平衡值。</string>
+       </property>
+       <property name="suffix">
+        <string> px</string>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>10000</number>
+       </property>
+       <property name="singleStep">
+        <number>10</number>
+       </property>
+       <property name="value">
+        <number>80</number>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="BodyLabel" name="lbl_morph">
+       <property name="text">
+        <string>形态学核</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="CompactSpinBox" name="spin_morph">
+       <property name="toolTip">
+        <string>作用：变化 mask 做开/闭运算的核大小，用于去小噪点、连接碎片。
+调大 (7~15)：更强去噪，但会吃掉细小变化。
+调小 (1~3)：保留细节，但可能残留噪点。
+默认 3：轻度清理。</string>
+       </property>
+       <property name="suffix">
+        <string> px</string>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>31</number>
+       </property>
+       <property name="singleStep">
+        <number>2</number>
+       </property>
+       <property name="value">
+        <number>3</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>CheckBox</class>
+   <extends>QCheckBox</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>ComboBox</class>
+   <extends>QPushButton</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>BodyLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>StrongBodyLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>CompactSpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>CompactDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
