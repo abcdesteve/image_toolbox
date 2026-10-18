@@ -111,9 +111,12 @@ class _Step2Worker(QRunnable):
 # ============================================================
 class AdvancePanel(FluentDrawer, Ui_AdvancePanel):
     def __init__(self, parent=None):
-        FluentDrawer.__init__(self, '高级设置', DrawerSide.BOTTOM, parent, checkbox_enabled=True,expanded=False, autohide=AutoHideMode.CHECKBOX)
+        FluentDrawer.__init__(self, '高级设置', DrawerSide.BOTTOM, parent,
+                              checkbox_visible=True, expanded=False, resizable=False,content_enabled=False,
+                              autohide=AutoHideMode.CHECKBOX | AutoHideMode.HOVER |AutoHideMode.FOCUS)
         self.container = QWidget(self)
         self.contentLayout().addWidget(self.container)
+        self.setExpandedSize(280)
         Ui_AdvancePanel.setupUi(self, self.container)
 
 
@@ -474,7 +477,7 @@ class DifInterface(QWidget, Ui_DifInterface):
         self.btn_step2.setEnabled(step1_done)
         [v.setEnabled({'align': step1_done, 'dif': step2_done}[k]) for k, v in self.overlay_seg.items.items()]
         self.btn_export.setEnabled(step1_done)
-        self.advance_panel.checkbox().setEnabled(ready)
+        self.advance_panel.setEnabled(ready)
         if not ready:
             self.advance_panel.checkbox().setChecked(False)
 

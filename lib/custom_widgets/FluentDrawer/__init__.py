@@ -10,6 +10,7 @@ FluentDrawer — 基于 QFluentWidgets (PySide6) 的自定义抽屉容器组件
     Panel 内部 = header + content，content 通过自身几何滑动，超出部分由 Qt 裁剪
 """
 
+from __future__ import annotations
 from enum import Enum, Flag, auto
 
 from PySide6.QtCore import *
@@ -189,7 +190,7 @@ class DrawerSplitterHandle(QFrame):
 # ═══════════════════════════════════════════════
 
 class DrawerPanel(QFrame):
-    def __init__(self, drawer, parent):
+    def __init__(self, drawer:FluentDrawer, parent):
         super().__init__(parent)
         self._drawer = drawer
         self._shadow_on = False
@@ -209,16 +210,16 @@ class DrawerPanel(QFrame):
         self._headerLayout.setSpacing(8)
 
         self._checkbox = None
-        if drawer._checkbox_enabled:
+        if drawer._checkbox_visible:
             self._checkbox = CheckBox(self._headerFrame)
-            self._checkbox.setChecked(True)
+            self._checkbox.setChecked(False)
             self._headerLayout.addWidget(self._checkbox, 0, Qt.AlignmentFlag.AlignCenter)
 
         self._titleLabel = RotatedLabel(drawer._title, 0, self._headerFrame)
         self._titleLabel.setObjectName("drawerTitle")
         self._headerLayout.addWidget(self._titleLabel, 0, Qt.AlignmentFlag.AlignCenter)
         self._headerLayout.addStretch(1)
-        self._headerFrame.setVisible(bool(drawer._title) or drawer._checkbox_enabled)
+        self._headerFrame.setVisible(bool(drawer._title) or drawer._checkbox_visible)
 
         # ── content ──
         self._contentFrame = QFrame(self)
@@ -526,30 +527,33 @@ class FluentDrawer(QFrame):
 
     def __init__(
         self,
-        title: str = "",
-        side: DrawerSide = DrawerSide.LEFT,
-        parent=None,
+        title: str,
+        side: DrawerSide ,
+        parent:QWidget,
+        content:QWidget|QLayout=None,
         *,
-        checkbox_enabled: bool = False,
+        checkbox_visible: bool = False,
         autohide: AutoHideMode = AutoHideMode.NONE,
         animated: bool = True,
         resizable: bool = False,
         expanded: bool = True,
+        content_enabled:bool=True,
         content_margins: tuple = (16, 14, 16, 14),
         content_spacing: int = 10,
     ):
+        '在启用了AutoHideMode.HOVER时expanded设置会失效'
         super().__init__(parent)
-        self._side = side
         self._title = title
-        self._checkbox_enabled = checkbox_enabled
+        self._side = side
+        self._checkbox_visible = checkbox_visible
         self._autohide = autohide
         self._animated = animated
         self._resizable = resizable
-        self._expanded = expanded
+
+        # 状态变量
         self._is_animating = False
         self._expanded_size = self.DEFAULT_EXPANDED_SIZE
         self._collapsed_size = self.MIN_COLLAPSED_SIZE
-        self._content_enabled = True
         self._content_margins = content_margins
         self._content_spacing = content_spacing
         self._drag_last_pos = None
@@ -559,7 +563,6 @@ class FluentDrawer(QFrame):
         self._hover_timer = None
         self._dragging = False
         self._hover_block_until_leave = False
-
         self._is_horizontal = side in (DrawerSide.LEFT, DrawerSide.RIGHT)
 
         self.setObjectName("fluentDrawerPlaceholder")
@@ -574,7 +577,17 @@ class FluentDrawer(QFrame):
             self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         self._setPlaceholderSize(self._expanded_size if expanded else self.MIN_COLLAPSED_SIZE)
-        QTimer.singleShot(0, self._ensurePanel)
+        self._expanded = False # 初始状态，在init最后设置
+        self._ensurePanel()
+        if content is not None:
+            if isinstance(content, QWidget):
+                self.contentLayout().addWidget(content)
+            elif isinstance(content, QLayout):
+                self.contentLayout().addLayout(content)
+
+        self.setContentEnabled(content_enabled)
+        if expanded and not (autohide&AutoHideMode.HOVER):
+            QTimer.singleShot(100,lambda:self.expand(floating=False,sync_checkbox=False))
 
     # ─────────────────────────────────────────
     # Panel 生命周期
@@ -584,8 +597,6 @@ class FluentDrawer(QFrame):
         if self._panel is not None:
             return
         parent = self.parentWidget()
-        if parent is None:
-            return
 
         self._panel = DrawerPanel(self, parent)
         if self._panel.checkbox() is not None:
@@ -603,12 +614,16 @@ class FluentDrawer(QFrame):
         if not self._expanded:
             self._applyExpandedState(animated=False)
 
-    def event(self, e):
+    def event(self, e:QEvent):
         if e.type() == QEvent.Type.ParentChange:
             QTimer.singleShot(0, self._ensurePanel)
         elif e.type() in (QEvent.Type.Move, QEvent.Type.Resize):
             if self._panel is not None:
                 self._syncPanelFollowPlaceholder()
+        elif e.type()== QEvent.Type.EnabledChange:
+            try:
+                self._panel.checkbox().setEnabled(self.isEnabled())
+            except:pass
         return super().event(e)
 
     def _syncPanelFollowPlaceholder(self):
@@ -648,20 +663,15 @@ class FluentDrawer(QFrame):
         QTimer.singleShot(0, refresh)
 
     def _onCheckboxChanged(self, _state):
-        checked = self._panel.checkbox().isChecked()
-
-        if not (self._autohide & AutoHideMode.CHECKBOX):
-            self.setContentEnabled(checked)
-            self.checkboxStateChanged.emit(checked)
+        if not self.isEnabled():
             return
-
-        if checked:
-            self._hover_block_until_leave = False
-
+        checked = self._panel.checkbox().isChecked()
         self.setContentEnabled(checked)
         self.checkboxStateChanged.emit(checked)
-
+        if not (self._autohide & AutoHideMode.CHECKBOX):
+            return
         if checked:
+            self._hover_block_until_leave = False
             if not self._expanded:
                 self.expand(floating=False)
             elif self._floating_active:
@@ -699,13 +709,15 @@ class FluentDrawer(QFrame):
         if self._autohide & AutoHideMode.HOVER:
             if self._hover_timer is None:
                 self._hover_timer = QTimer(self)
-                self._hover_timer.setInterval(40)
+                self._hover_timer.setInterval(100)
                 self._hover_timer.timeout.connect(self._checkHover)
             self._hover_timer.start()
         elif self._hover_timer is not None:
             self._hover_timer.stop()
 
     def _checkHover(self):
+        if not self.isEnabled():
+            return
         if self._dragging:
             return
         if self._panel is None or not self._panel.isVisible():
@@ -743,7 +755,9 @@ class FluentDrawer(QFrame):
             if inside:
                 self.expand(floating=True, sync_checkbox=False)
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, obj, event:QEvent):
+        if not self.isEnabled():
+            return super().eventFilter(obj, event)
         if not (self._autohide & AutoHideMode.FOCUS):
             return super().eventFilter(obj, event)
         if event.type() != QEvent.Type.MouseButtonPress:
@@ -782,6 +796,8 @@ class FluentDrawer(QFrame):
     # ─────────────────────────────────────────
 
     def expand(self, *, floating=False, sync_checkbox=True):
+        if not self.isEnabled():
+            return
         if self._expanded:
             if floating != self._floating_active:
                 self._switch_floating(floating)
@@ -804,6 +820,8 @@ class FluentDrawer(QFrame):
         self.expanded.emit()
 
     def collapse(self, *, floating=None, sync_checkbox=True):
+        if not self.isEnabled():
+            return
         if not self._expanded and not self._is_animating:
             return
         self._stopAnimation()
@@ -868,7 +886,8 @@ class FluentDrawer(QFrame):
             self._panel.setUpdatesEnabled(False)
             self._panel.applyHeaderLayout(False)
             hdr = self._panel.headerWidget()
-            if hdr is not None and hdr.isVisible():
+            # isVisible在show之前为False，会导致第一次尺寸计算被跳过，改为isHidden只会在hide之后为True
+            if hdr is not None and not hdr.isHidden():
                 if self._is_horizontal:
                     self._collapsed_size = max(hdr.sizeHint().width(), self.MIN_COLLAPSED_SIZE)
                 else:
@@ -975,6 +994,8 @@ class FluentDrawer(QFrame):
     # ─────────────────────────────────────────
 
     def _onSplitterDragStart(self):
+        if not self.isEnabled():
+            return
         if not self._expanded:
             return
         self._drag_last_pos = None
@@ -1034,13 +1055,18 @@ class FluentDrawer(QFrame):
     def contentLayout(self):
         if self._panel is None:
             self._ensurePanel()
-        return self._panel.contentLayout() if self._panel else None
+        return self._panel.contentLayout()
 
     def setContentEnabled(self, enabled: bool):
         self._content_enabled = enabled
         if self._panel is not None:
             self._panel.contentFrame().setEnabled(enabled)
             self._panel.headerWidget().setEnabled(True)
+            if self.checkbox().isChecked()!= enabled:
+                if self._autohide&AutoHideMode.CHECKBOX:
+                    self.checkbox().setChecked(enabled)
+                else:
+                    self._setCheckboxSilently(enabled)
 
     def isContentEnabled(self):
         return self._content_enabled
@@ -1052,7 +1078,7 @@ class FluentDrawer(QFrame):
             cb = self._panel.checkbox()
             if cb is not None:
                 cb.setText(title)
-            self._panel.headerWidget().setVisible(bool(title) or self._checkbox_enabled)
+            self._panel.headerWidget().setVisible(bool(title) or self._checkbox_visible)
 
     def title(self):
         return self._title
@@ -1073,7 +1099,7 @@ class FluentDrawer(QFrame):
     def isExpanded(self):
         return self._expanded
 
-    def setExpandedSize(self, size):
+    def setExpandedSize(self, size: int):
         size = max(self.MIN_EXPANDED_SIZE, size)
         if size == self._expanded_size:
             return
