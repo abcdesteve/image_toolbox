@@ -140,10 +140,10 @@ class DemoWindow(FluentWindow):
 
         # ── 右侧抽屉 ──
         self.rightDrawer = FluentDrawer(
-            title="右侧抽屉",
+            title="",
             side=DrawerSide.RIGHT,
             parent=self.container,
-            checkbox_visible=True,
+            checkbox_visible=False,
             autohide=AutoHideMode.CHECKBOX | AutoHideMode.FOCUS,
             animated=True,
             resizable=True,

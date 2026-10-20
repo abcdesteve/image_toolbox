@@ -11,6 +11,7 @@ FluentDrawer — 基于 QFluentWidgets (PySide6) 的自定义抽屉容器组件
 """
 
 from __future__ import annotations
+from collections.abc import Callable
 from enum import Enum, Flag, auto
 
 from PySide6.QtCore import *
@@ -28,7 +29,7 @@ class DrawerSide(Enum):
 
 
 class AutoHideMode(Flag):
-    """可叠加的自动隐藏触发模式。用 & 判断。"""
+    """可叠加的自动隐藏触发模式。用 & 判断"""
     NONE = 0
     CHECKBOX = auto()   # CheckBox 状态 <-> 展开/收起 双向联动
     HOVER = auto()      # 鼠标进入/离开（悬浮模式展开）
@@ -40,15 +41,15 @@ class AutoHideMode(Flag):
 # ═══════════════════════════════════════════════
 
 class RotatedLabel(BodyLabel):
-    def __init__(self, text="", angle=0, parent=None):
+    def __init__(self, text: str = "", angle: int = 0, parent: QWidget | None = None):
         super().__init__(text)
         if parent is not None:
             self.setParent(parent)
         self._angle = angle
         self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
-    def setAngle(self, angle):
-        """设置文字旋转角度（0 / 90 / -90）。0 时退回普通 BodyLabel 绘制。"""
+    def setAngle(self, angle: int):
+        """设置文字旋转角度（0 / 90 / -90）。0 时退回普通 BodyLabel 绘制"""
         if self._angle == angle:
             return
         self._angle = angle
@@ -69,11 +70,11 @@ class RotatedLabel(BodyLabel):
         p.setFont(self.font())
         p.drawText(QRectF(-h / 2.0, -w / 2.0, h, w), Qt.AlignmentFlag.AlignCenter, self.text())
 
-    def _rotatedSize(self, hint):
+    def _rotatedSize(self, hint: QSize) -> QSize:
         return QSize(hint.height(), hint.width()) if self._angle in (90, -90) else hint
 
-    def sizeHint(self): return self._rotatedSize(super().sizeHint())
-    def minimumSizeHint(self): return self._rotatedSize(super().minimumSizeHint())
+    def sizeHint(self) -> QSize: return self._rotatedSize(super().sizeHint())
+    def minimumSizeHint(self) -> QSize: return self._rotatedSize(super().minimumSizeHint())
 
 
 # ═══════════════════════════════════════════════
@@ -88,7 +89,7 @@ class DrawerSplitterHandle(QFrame):
     dragMoved = Signal(QPoint)
     dragFinished = Signal()
 
-    def __init__(self, orientation, parent=None):
+    def __init__(self, orientation: Qt.Orientation, parent: QWidget | None = None):
         super().__init__(parent)
         self._orientation = orientation
         self._hovered = False
@@ -126,8 +127,15 @@ class DrawerSplitterHandle(QFrame):
             for i in range(3):
                 p.drawEllipse(QPoint(int(cx - s + i * s), int(cy)), r, r)
 
-    def enterEvent(self, e): self._hovered = True; self.update(); super().enterEvent(e)
-    def leaveEvent(self, e): self._hovered = False; self.update(); super().leaveEvent(e)
+    def enterEvent(self, e: QEnterEvent):
+        self._hovered = True
+        self.update()
+        super().enterEvent(e)
+
+    def leaveEvent(self, e: QEvent):
+        self._hovered = False
+        self.update()
+        super().leaveEvent(e)
 
     def mousePressEvent(self, e: QMouseEvent):
         if e.button() == Qt.MouseButton.LeftButton:
@@ -154,9 +162,9 @@ class DrawerSplitterHandle(QFrame):
 # ═══════════════════════════════════════════════
 
 class DrawerPanel(QFrame):
-    """抽屉的视觉本体，与占位符同父容器、不在布局中。几何由 FluentDrawer 驱动。"""
+    """抽屉的视觉本体，与占位符同父容器、不在布局中。几何由 FluentDrawer 驱动"""
 
-    def __init__(self, drawer, parent):
+    def __init__(self, drawer: FluentDrawer, parent: QWidget | None):
         super().__init__(parent)
         self._drawer = drawer
         self._shadow_on = False
@@ -174,15 +182,14 @@ class DrawerPanel(QFrame):
         self._headerLayout.setContentsMargins(14, 14, 14, 14)
         self._headerLayout.setSpacing(8)
 
-        self._checkbox = CheckBox(self._headerFrame) if drawer._checkbox_visible else None
-        if self._checkbox is not None:
-            self._checkbox.setChecked(False)
-            self._headerLayout.addWidget(self._checkbox, 0, Qt.AlignmentFlag.AlignCenter)
+        self._checkbox = CheckBox(self._headerFrame)
+        self._checkbox.setVisible(drawer._checkbox_visible)
+        self._checkbox.setChecked(drawer._content_enabled)
+        self._headerLayout.addWidget(self._checkbox, 0, Qt.AlignmentFlag.AlignCenter)
         self._titleLabel = RotatedLabel(drawer._title, 0, self._headerFrame)
         self._titleLabel.setObjectName("drawerTitle")
         self._headerLayout.addWidget(self._titleLabel, 0, Qt.AlignmentFlag.AlignCenter)
         self._headerLayout.addStretch(1)
-        self._headerFrame.setVisible(bool(drawer._title) or drawer._checkbox_visible)
 
         # ── content ──
         self._contentFrame = QFrame(self)
@@ -205,31 +212,33 @@ class DrawerPanel(QFrame):
         self.setStyleSheet("#drawerPanel, #drawerHeader, #drawerContent, #drawerTitle { background: transparent; border: none; } #drawerPanel CheckBox { background: transparent; }")
         self.hide()
 
-    def contentLayout(self): return self._contentLayout
-    def headerWidget(self): return self._headerFrame
-    def checkbox(self): return self._checkbox
-    def contentFrame(self): return self._contentFrame
+    def contentLayout(self) -> QVBoxLayout: return self._contentLayout
+    def headerWidget(self) -> QFrame: return self._headerFrame
+    def checkbox(self) -> CheckBox: return self._checkbox
+    def contentFrame(self) -> QFrame: return self._contentFrame
 
-    def syncGeometry(self, rect):
-        """把 Panel 摆到 rect 上；始终 raise_ 保证位于兄弟控件之上。"""
+    def syncGeometry(self, rect: QRect):
+        """把 Panel 摆到 rect 上；始终 raise_ 保证位于兄弟控件之上"""
         if self.geometry() != rect:
             self.setGeometry(rect)
         self.raise_()
 
-    def setHandleVisible(self, visible):
+    def setHandleVisible(self, visible: bool):
         if self._splitterHandle is not None:
             self._splitterHandle.setVisible(visible)
 
-    def applyHeaderLayout(self, expanded, relayout=True):
+    def applyHeaderLayout(self, expanded: bool, relayout: bool = True):
         """
         切换 header 布局。
         expanded=True  -> 水平排列（正常标题 / CheckBox+文字）
         expanded=False -> 水平方向抽屉旋转标题；垂直方向保持水平布局
         relayout=False 时仅设置布局，不立即重排子控件几何（用于测量场景）。
         """
-        side, is_h, has_ckb, title = self._drawer._side, self._drawer._is_horizontal, self._checkbox is not None, self._drawer._title
+        # 注意不能用 self._checkbox.isVisible() ，因为设置可见性之前就会调用此方法
+        side, is_h, ckb_visible, title = self._drawer._side, self._drawer._is_horizontal, self._drawer._checkbox_visible, self._drawer._title
 
-        def setCkb(text, fixed_w=None):
+        def setCkb(text: str, fixed_w: int | None = None):
+            self._checkbox.setVisible(True)
             self._checkbox.setText(text)
             if fixed_w is not None:
                 self._checkbox.setFixedWidth(fixed_w)
@@ -239,7 +248,7 @@ class DrawerPanel(QFrame):
             self._checkbox.updateGeometry()
             self._headerLayout.setAlignment(self._checkbox, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
-        def setTitleLbl(angle=0, fixed_w=None):
+        def setTitleLbl(angle: int = 0, fixed_w: int | None = None):
             self._titleLabel.setVisible(True)
             self._titleLabel.setAngle(angle)
             if fixed_w is not None:
@@ -254,18 +263,21 @@ class DrawerPanel(QFrame):
             self._headerLayout.setDirection(QBoxLayout.Direction.LeftToRight)
             self._headerLayout.setContentsMargins(14, 14, 14, 14)
             self._headerLayout.setSpacing(8)
-            if has_ckb:
+            if ckb_visible:
                 setCkb(title)
                 self._titleLabel.setVisible(False)
             else:
                 setTitleLbl()
+                self._checkbox.setVisible(False)
         else:
             # 水平方向抽屉的收起态：纵向堆叠，标题旋转
             self._headerLayout.setDirection(QBoxLayout.Direction.TopToBottom)
             self._headerLayout.setContentsMargins(14, 14, 14, 14)
             self._headerLayout.setSpacing(6)
-            if has_ckb:
+            if ckb_visible:
                 setCkb("", fixed_w=22)
+            else:
+                self._checkbox.setVisible(False)
             setTitleLbl(angle=90 if side == DrawerSide.LEFT else -90, fixed_w=22)
             self._headerLayout.setAlignment(self._titleLabel, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
@@ -274,8 +286,15 @@ class DrawerPanel(QFrame):
         if relayout:
             self._relayout()
 
+    def updateHeaderVisibility(self):
+        """checkbox 不可见且标题为空 -> header 隐藏不占空间；状态变化后重排 content"""
+        should_show = bool(self._drawer._title) or self._drawer._checkbox_visible
+        if self._headerFrame.isHidden() == should_show:  # 当前隐藏与目标相反，需要切换
+            self._headerFrame.setVisible(should_show)
+            self._relayout()
+
     def _relayout(self):
-        """根据当前 Panel 尺寸，重新计算 header / content / 手柄的几何。"""
+        """根据当前 Panel 尺寸，重新计算 header / content / 手柄的几何"""
         if not self._headerFrame.isHidden():
             hh = self._headerFrame.sizeHint().height()
             self._headerFrame.setGeometry(0, 0, max(self.width(), 1), hh if hh > 0 else 40)
@@ -284,7 +303,7 @@ class DrawerPanel(QFrame):
         pw, ph = self.width(), self.height()
         hh = self._headerFrame.height() if not self._headerFrame.isHidden() else 0
 
-        def progress(cur, lo, hi):
+        def progress(cur: float, lo: float, hi: float) -> float:
             return 1.0 if hi <= lo else max(0.0, min(1.0, (cur - lo) / (hi - lo)))
 
         # content 沿展开方向滑出：t=0 完全藏于 header 后，t=1 完全展开
@@ -305,11 +324,16 @@ class DrawerPanel(QFrame):
                 DrawerSide.TOP: (0, ph - th, pw, th), DrawerSide.BOTTOM: (0, 0, pw, th),
             }[side])
 
-    def showEvent(self, e): super().showEvent(e); self._relayout()
-    def resizeEvent(self, e): self._relayout(); super().resizeEvent(e)
+    def showEvent(self, e: QShowEvent):
+        super().showEvent(e)
+        self._relayout()
 
-    def setShadow(self, on):
-        """开关悬浮阴影（仅悬浮展开时启用）。"""
+    def resizeEvent(self, e: QResizeEvent):
+        self._relayout()
+        super().resizeEvent(e)
+
+    def setShadow(self, on: bool):
+        """开关悬浮阴影（仅悬浮展开时启用）"""
         if on == self._shadow_on:
             return
         self._shadow_on = on
@@ -324,7 +348,7 @@ class DrawerPanel(QFrame):
         self.raise_()
 
     def paintEvent(self, event: QPaintEvent):
-        def buildEdge(rect, r):
+        def buildEdge(rect: QRectF, r: float) -> QPainterPath:
             # 非贴靠侧 + 相邻两端圆角的描边路径
             p = QPainterPath()
             d = 2.0 * r
@@ -348,7 +372,7 @@ class DrawerPanel(QFrame):
                 p.arcTo(QRectF(R - d, T, d, d), 90, -90)
             return p
 
-        def drawNoise(painter, rect, r, alpha):
+        def drawNoise(painter: QPainter, rect: QRectF, r: float, alpha: int):
             # 64x64 噪点贴图，平铺出磨砂质感（固定种子，结果确定）
             pm = QPixmap(64, 64)
             pm.fill(Qt.GlobalColor.transparent)
@@ -415,7 +439,22 @@ class FluentDrawer(QFrame):
     DEFAULT_EXPANDED_SIZE = 280
     MIN_COLLAPSED_SIZE = 40
 
-    def __init__(self, title, side, parent, content=None, *, checkbox_visible=False, autohide=AutoHideMode.NONE, animated=True, resizable=False, expanded=True, content_enabled=True, content_margins=(16, 14, 16, 14), content_spacing=10):
+    # 修改默认值别忘了同步wrapExisting
+    def __init__(
+        self,
+        title: str,
+        side: DrawerSide,
+        parent: QWidget,
+        content: QWidget | QLayout | None = None,
+        checkbox_visible: bool = False,
+        autohide: AutoHideMode = AutoHideMode.NONE,
+        animated: bool = True,
+        resizable: bool = False,
+        expanded: bool = True,
+        content_enabled: bool = True,
+        content_margins: tuple[int, int, int, int] = (16, 14, 16, 14),
+        content_spacing: int = 10,
+    ):
         """
         title:            标题文字（展开态显示）
         side:             DrawerSide，决定圆角方向 / 手柄所在边 / 收起形态
@@ -433,7 +472,6 @@ class FluentDrawer(QFrame):
         super().__init__(parent)
         self._title = title
         self._side = side
-        self._checkbox_visible = checkbox_visible
         self._autohide = autohide
         self._animated = animated
         self._resizable = resizable
@@ -463,28 +501,27 @@ class FluentDrawer(QFrame):
             self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         self._expanded = False
+        self._checkbox_visible = False
         self._ensurePanel()
+        self.setCheckboxVisible(checkbox_visible)
+        self._panel.updateHeaderVisibility() # checkbox_visible=False 时会不刷新 Header ，需要手动刷新一次
         if content is not None:
-            if isinstance(content, QWidget):
-                self.contentLayout().addWidget(content)
-            elif isinstance(content, QLayout):
-                self.contentLayout().addLayout(content)
+            self.setContent(content)
         self.setContentEnabled(content_enabled)
         # HOVER 模式由定时器驱动，初始展开请求应忽略
-        if expanded and not (autohide & AutoHideMode.HOVER):
-            QTimer.singleShot(100, lambda: self.expand(floating=False, sync_checkbox=False))
+        if expanded:
+            QTimer.singleShot(500, lambda: self.expand(floating=False, sync_checkbox=False))
 
     # ─────────────────────────────────────────
     # Panel 生命周期
     # ─────────────────────────────────────────
 
     def _ensurePanel(self):
-        """惰性创建 Panel，并完成一次初始布局（含收起尺寸测量）。"""
+        """惰性创建 Panel，并完成一次初始布局（含收起尺寸测量）"""
         if self._panel:
             return
         self._panel = DrawerPanel(self, self.parentWidget())
-        if self._panel.checkbox() is not None:
-            self._panel.checkbox().stateChanged.connect(self._onCheckboxChanged)
+        self._panel.checkbox().stateChanged.connect(self._onCheckboxChanged)
         # 主题变化时只需重绘 Panel，不必重建结构
         qconfig.themeChanged.connect(lambda *_: QTimer.singleShot(0, lambda: self._panel and self._panel.update()))
         self._initAutohide()
@@ -513,10 +550,12 @@ class FluentDrawer(QFrame):
             hdr = self._panel.headerWidget()
             if hdr is not None and not hdr.isHidden():
                 self._collapsed_size = max(hdr.sizeHint().width() if self._is_horizontal else hdr.sizeHint().height(), self.MIN_COLLAPSED_SIZE)
+            else:
+                self._collapsed_size = self.MIN_COLLAPSED_SIZE
         finally:
             self._panel.setUpdatesEnabled(True)
 
-    def event(self, e: QEvent):
+    def event(self, e: QEvent) -> bool:
         # 换父后需重建 Panel
         if e.type() == QEvent.Type.ParentChange:
             QTimer.singleShot(0, self._ensurePanel)
@@ -531,23 +570,21 @@ class FluentDrawer(QFrame):
         # 禁用时 CheckBox 也要禁用
         elif e.type() == QEvent.Type.EnabledChange and self._panel:
             ckb = self._panel.checkbox()
-            if ckb is not None:
-                ckb.setEnabled(self.isEnabled())
+            ckb.setEnabled(self.isEnabled())
             # 避免调用setContentEnabled，防止联动
-            if self._panel.contentFrame() is not None:
-                self._panel.contentFrame().setEnabled(self.isEnabled() and ckb.isChecked())
+            self._panel.contentFrame().setEnabled(self.isEnabled() and ckb.isChecked())
         return super().event(e)
 
-    def _computePanelRect(self, size):
-        """按当前占位符几何和 size 计算 Panel 应占的矩形（父坐标系）。"""
+    def _computePanelRect(self, size: int) -> QRect:
+        """按当前占位符几何和 size 计算 Panel 应占的矩形（父坐标系）"""
         pos = self.pos()
         pw, ph = max(self.width(), 1), max(self.height(), 1)
         if self._is_horizontal:
             return QRect(pos.x(), pos.y(), size, ph) if self._side == DrawerSide.LEFT else QRect(pos.x() + pw - size, pos.y(), size, ph)
         return QRect(pos.x(), pos.y(), pw, size) if self._side == DrawerSide.TOP else QRect(pos.x(), pos.y() + ph - size, pw, size)
 
-    def _isInsideRect(self, global_pos, size):
-        """global_pos 是否落在按 size 计算出的 Panel 矩形内。"""
+    def _isInsideRect(self, global_pos: QPoint, size: int) -> bool:
+        """global_pos 是否落在按 size 计算出的 Panel 矩形内"""
         parent = self.parentWidget()
         if parent is None:
             return False
@@ -558,7 +595,7 @@ class FluentDrawer(QFrame):
     # CheckBox
     # ─────────────────────────────────────────
 
-    def _onCheckboxChanged(self, _state):
+    def _onCheckboxChanged(self, _state: int):
         # 联动：CheckBox 状态变化 -> content 启停 + 展开/收起
         if not self.isEnabled():
             return
@@ -579,10 +616,12 @@ class FluentDrawer(QFrame):
                 self._hover_block_until_leave = True
             self.collapse(floating=False)
 
-    def _setCheckboxSilently(self, checked):
-        """程序化设置 CheckBox 状态，屏蔽信号回环。"""
-        ckb = self._panel.checkbox() if self._panel else None
-        if ckb is None or ckb.isChecked() == checked:
+    def _setCheckboxSilently(self, checked: bool):
+        """程序化设置 CheckBox 状态，屏蔽信号回环"""
+        if not self._panel:
+            return
+        ckb = self._panel.checkbox()
+        if ckb.isChecked() == checked:
             return
         ckb.blockSignals(True)
         ckb.setChecked(checked)
@@ -594,7 +633,7 @@ class FluentDrawer(QFrame):
     # ─────────────────────────────────────────
 
     def _initAutohide(self):
-        """按当前 autohide 模式挂/摘事件过滤器、启/停 hover 定时器。"""
+        """按当前 autohide 模式挂/摘事件过滤器、启/停 hover 定时器"""
         app = QApplication.instance()
         # 先清掉历史注册，避免模式切换残留
         for target in (app, self):
@@ -623,20 +662,18 @@ class FluentDrawer(QFrame):
         size = self._expanded_size if self._expanded else self._collapsed_size
         inside = top is not None and top.window() is self.window() and self._isInsideRect(gp, size)
         if self._autohide & AutoHideMode.CHECKBOX:
-            ckb = self._panel.checkbox()
-            if ckb is not None and ckb.isChecked():
+            if self._panel.checkbox().isChecked():
                 return
         if self._hover_block_until_leave:
             if not inside:
                 self._hover_block_until_leave = False
             return
-        if self._expanded:
-            if not inside:
-                self.collapse(floating=True, sync_checkbox=False)
-        elif inside:
+        if self._floating_active and not inside:
+            self.collapse(floating=True, sync_checkbox=False)
+        if not self._expanded and inside:
             self.expand(floating=True, sync_checkbox=False)
 
-    def eventFilter(self, obj, event: QEvent):
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         # FOCUS 模式：全局左键按下 -> 内展开 / 外收起
         if not self.isEnabled() or not (self._autohide & AutoHideMode.FOCUS):
             return super().eventFilter(obj, event)
@@ -648,7 +685,7 @@ class FluentDrawer(QFrame):
         gp = event.globalPosition().toPoint()
         # 落在 CheckBox 上交给其自己处理（信号驱动展开/收起）
         ckb = self._panel.checkbox()
-        if ckb is not None and ckb.isVisible() and QRect(ckb.mapToGlobal(QPoint(0, 0)), ckb.size()).contains(gp):
+        if ckb.isVisible() and QRect(ckb.mapToGlobal(QPoint(0, 0)), ckb.size()).contains(gp):
             return super().eventFilter(obj, event)
 
         size = self._expanded_size if self._expanded else self._collapsed_size
@@ -662,7 +699,7 @@ class FluentDrawer(QFrame):
     # 展开 / 收起
     # ─────────────────────────────────────────
 
-    def expand(self, *, floating=False, sync_checkbox=True):
+    def expand(self, *, floating: bool = False, sync_checkbox: bool = True):
         """
         展开抽屉。
         floating:      True=悬浮展开（占位符不动，Panel 覆盖展开），False=挤压展开
@@ -679,15 +716,15 @@ class FluentDrawer(QFrame):
         self._stopAnimation()
         self._expanded = True
         self._floating_active = floating
-        # 纯 HOVER 触发展开时，首次给 content 打开 enable
-        if floating and not (self._autohide & AutoHideMode.CHECKBOX) and not self._content_enabled:
-            self.setContentEnabled(True)
+        # 纯 HOVER / FOCUS 触发展开时，不再每次进入都启用，改为setContentEnabled控制
+        # if floating and not (self._autohide & AutoHideMode.CHECKBOX) and not self._content_enabled:
+        #     self.setContentEnabled(True)
         if sync_checkbox and (self._autohide & AutoHideMode.CHECKBOX):
             self._setCheckboxSilently(True)
         self._applyExpandedState(animated=self._animated)
         self.expanded.emit()
 
-    def collapse(self, *, floating=None, sync_checkbox=True):
+    def collapse(self, *, floating: bool | None = None, sync_checkbox: bool = True):
         """
         收起抽屉。
         floating:      True=悬浮收起（占位符不动），False=挤压收起，None=沿用当前模式
@@ -699,14 +736,14 @@ class FluentDrawer(QFrame):
             return
         self._stopAnimation()
         self._expanded = False
-        self._floating_active = self._floating_active if floating is None else floating
         if sync_checkbox and (self._autohide & AutoHideMode.CHECKBOX):
             self._setCheckboxSilently(False)
         self._applyExpandedState(animated=self._animated)
+        self._floating_active = False
         self.collapsed.emit()
 
-    def toggle(self, *, floating=False):
-        """切换展开/收起。floating 同 expand 的参数。"""
+    def toggle(self, *, floating: bool = False):
+        """切换展开/收起。floating 同 expand 的参数"""
         if self._expanded:
             self.collapse(floating=floating)
         else:
@@ -725,7 +762,7 @@ class FluentDrawer(QFrame):
             self._anim = None
         self._is_animating = False
 
-    def _setPlaceholderSize(self, size):
+    def _setPlaceholderSize(self, size: int):
         if self._is_horizontal:
             self.setMinimumWidth(size)
             self.setMaximumWidth(size)
@@ -733,25 +770,32 @@ class FluentDrawer(QFrame):
             self.setMinimumHeight(size)
             self.setMaximumHeight(size)
 
-    def _setPanelRect(self, size):
-        if self._panel:
-            self._panel.syncGeometry(self._computePanelRect(size))
+    def _setPanelRect(self, size: int):
+        self._ensurePanel()
+        self._panel.syncGeometry(self._computePanelRect(size))
 
-    def _applySize(self, size, floating=None):
-        """floating=True 只动 Panel；False 占位符和 Panel 一起动；None 按当前模式。"""
+    def _applySize(self, size: int, floating: bool | None = None):
+        """floating=True 只动 Panel；False 占位符和 Panel 一起动；None 按当前模式"""
         if floating is None:
             floating = self._floating_active
         if not floating:
             self._setPlaceholderSize(size)
         self._setPanelRect(size)
 
-    def _currentSize(self):
+    def _currentSize(self) -> int:
         if self._floating_active:
             return self._panel.width() if self._is_horizontal else self._panel.height()
         return self.width() if self._is_horizontal else self.height()
 
-    def _run_size_animation(self, start, end, duration, on_value, on_finish):
-        """尺寸动画骨架：调用方提供 on_value / on_finish 回调。"""
+    def _run_size_animation(
+        self,
+        start: int,
+        end: int,
+        duration: int,
+        on_value: Callable[[int], None],
+        on_finish: Callable[[], None],
+    ):
+        """尺寸动画骨架：调用方提供 on_value / on_finish 回调"""
         self._stopAnimation()
         self._is_animating = True
         anim = QVariantAnimation(self)
@@ -764,7 +808,7 @@ class FluentDrawer(QFrame):
         anim.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
         self._anim = anim
 
-    def _applyExpandedState(self, animated):
+    def _applyExpandedState(self, animated: bool):
         if not self._panel:
             return
 
@@ -802,7 +846,7 @@ class FluentDrawer(QFrame):
         current = self._currentSize()
         rotate_header_at_end = not self._expanded
 
-        def on_value(v): self._applySize(int(v), floating_anim)
+        def on_value(v: int): self._applySize(int(v), floating_anim)
 
         def on_finished():
             self._is_animating = False
@@ -816,8 +860,8 @@ class FluentDrawer(QFrame):
 
         self._run_size_animation(current, target, 250, on_value, on_finished)
 
-    def _switch_floating(self, to_floating):
-        """悬浮 <-> 挤压 模式切换：占位符动画，Panel 始终锁定展开尺寸。"""
+    def _switch_floating(self, to_floating: bool):
+        """悬浮 <-> 挤压 模式切换：占位符动画，Panel 始终锁定展开尺寸"""
         if self._floating_active == to_floating:
             return
         self._floating_active = to_floating
@@ -834,7 +878,7 @@ class FluentDrawer(QFrame):
 
         current = self.width() if self._is_horizontal else self.height()
 
-        def on_value(v):
+        def on_value(v: int):
             self._setPlaceholderSize(int(v))
             self._setPanelRect(self._expanded_size)
 
@@ -856,8 +900,8 @@ class FluentDrawer(QFrame):
         self._dragging = True
         self._stopAnimation()
 
-    def _onSplitterDrag(self, global_pos):
-        """按边方向把鼠标位移换算成展开尺寸，并限制到合理范围。"""
+    def _onSplitterDrag(self, global_pos: QPoint):
+        """按边方向把鼠标位移换算成展开尺寸，并限制到合理范围"""
         if not self._expanded or not self._dragging:
             return
         if self._drag_last_pos is None:
@@ -900,50 +944,158 @@ class FluentDrawer(QFrame):
     # ─────────────────────────────────────────
     # 公共 API
     # ─────────────────────────────────────────
+    @classmethod
+    def wrapExisting(
+        cls,
+        target: QWidget | QLayout,
+        title: str,
+        side: DrawerSide,
+        checkbox_visible: bool = False,
+        autohide: AutoHideMode = AutoHideMode.NONE,
+        animated: bool = True,
+        resizable: bool = False,
+        expanded: bool = True,
+        content_enabled: bool = True,
+        content_margins: tuple[int, int, int, int] = (16, 14, 16, 14),
+        content_spacing: int = 10,
+    ) -> FluentDrawer:
+        """把已有的 widget / layout 包装成抽屉内容，并替换它在父容器中的位置
 
-    def contentLayout(self):
-        """返回 content 布局，供外部添加内容。"""
+        - target 在父控件的 layout 中：按原索引摘除并插回 drawer（仅 QBoxLayout 支持按索引插入，其他布局退化到末尾）
+        - target 自由摆放（父控件无 layout，或 layout 树中找不到）：drawer 左上角直接对齐 target 左上角，
+          占位尺寸沿用 target 尺寸（抽屉展开轴的 min/max 约束会自动 clamp）
+        """
+        # 顶层 layout 无法独立移动，转去包装它所属的 widget
+        if isinstance(target, QLayout) and target.parentWidget() is not None and target.parentWidget().layout() is target:
+            target = target.parentWidget()
+        parent_widget = target.parentWidget()
+        if parent_widget is None:
+            raise ValueError("wrapExisting: target 没有父控件，无法包装")
+
+        def _locate_in_layout(target: QWidget | QLayout, parent_widget: QWidget) -> tuple[QLayout | None, int]:
+            """在 parent_widget 的 layout 树中定位 target 所在的 (直接父布局, 索引)。找不到返回 (None, -1)。
+
+            前提：target 不是 parent_widget 的顶层 layout 本身（wrapExisting 已提前转为 widget）。
+            target 在 layout 树中位置唯一，DFS 命中即返回。
+            """
+            root = parent_widget.layout()
+            if root is None:
+                return None, -1
+            stack: list[QLayout] = [root]
+            while stack:
+                lay = stack.pop()
+                for i in range(lay.count()):
+                    it = lay.itemAt(i)
+                    if it is None:
+                        continue
+                    if isinstance(target, QWidget) and it.widget() is target:
+                        return lay, i
+                    if isinstance(target, QLayout) and it.layout() is target:
+                        return lay, i
+                    sub = it.layout()
+                    if sub is not None:
+                        stack.append(sub)
+            return None, -1
+        parent_layout, index = _locate_in_layout(target, parent_widget)
+        drawer = cls(title=title, side=side, parent=parent_widget,
+                     checkbox_visible=checkbox_visible, autohide=autohide, animated=animated, resizable=resizable, expanded=expanded, content_enabled=content_enabled, content_margins=content_margins, content_spacing=content_spacing)
+        if parent_layout is not None and index >= 0:
+            # 布局内：摘下 target（takeAt 转移所有权，不销毁对象），按原索引插回 drawer
+            item = parent_layout.takeAt(index)
+            if item is None:
+                raise RuntimeError("wrapExisting: takeAt 返回 None，索引可能已失效")
+            if isinstance(parent_layout, QBoxLayout):
+                parent_layout.insertWidget(index, drawer)
+            else:
+                parent_layout.addWidget(drawer)  # 基类 QLayout 无按索引插入的通用 API，退化到末尾
+        else:
+            # 自由摆放兜底：不做中心对齐，drawer 左上角直接对齐 target 左上角
+            drawer.move(target.pos())
+            if not target.size().isEmpty():
+                # 展开轴的 min/max 约束会在 resize 时自动 clamp（水平抽屉 clamp 宽，垂直抽屉 clamp 高）
+                drawer.resize(target.size())
+        drawer.setContent(target)  # 不能在构造时传参，因为需要先解除原布局
+        return drawer
+
+    def contentLayout(self) -> QVBoxLayout:
+        """返回 content 布局，供外部添加内容"""
         if not self._panel:
             self._ensurePanel()
         return self._panel.contentLayout()
 
-    def setContentEnabled(self, enabled):
-        """启用/禁用 content，并同步 CheckBox。"""
+    def setContent(self, obj: QWidget | QLayout | None):
+        """为 FluentDrawer 添加内容，可以是 QWidget 或 QLayout \n\n当 `obj` 为 None 时会清空内容，因此需要避免多次调用防止对象丢失"""
+        # 清空contentLayout
+        while item := self.contentLayout().takeAt(0):
+            if (temp := item.widget()) is not None:
+                temp.deleteLater()
+            if (temp := item.layout()) is not None:
+                temp.deleteLater()
+
+        if obj is not None:
+            if isinstance(obj, QWidget):
+                self.contentLayout().addWidget(obj)
+            elif isinstance(obj, QLayout):
+                self.contentLayout().addLayout(obj)
+
+    def setContentEnabled(self, enabled: bool):
+        """启用/禁用 content，并同步 CheckBox\n\n外部不应直接设置 CheckBox"""
         self._content_enabled = enabled
-        if not self._panel:
-            return
+        self._ensurePanel()
         self._panel.contentFrame().setEnabled(enabled)
         self._panel.headerWidget().setEnabled(True)
         ckb = self._panel.checkbox()
-        if ckb is None or ckb.isChecked() == enabled:
+        if ckb.isChecked() == enabled:
             return
         if self._autohide & AutoHideMode.CHECKBOX:
             ckb.setChecked(enabled)
         else:
             self._setCheckboxSilently(enabled)
 
-    def isContentEnabled(self): return self._content_enabled
+    def isContentEnabled(self) -> bool: return self._content_enabled
 
-    def setTitle(self, title):
-        """更新标题（同时刷新 CheckBox 文字，若启用）。"""
+    def setTitle(self, title: str):
+        """更新标题（同时刷新 CheckBox 文字，若启用）"""
         self._title = title
-        if self._panel:
-            self._panel._titleLabel.setText(title)
-            ckb = self._panel.checkbox()
-            if ckb is not None:
-                ckb.setText(title)
-            self._panel.headerWidget().setVisible(bool(title) or self._checkbox_visible)
+        self._ensurePanel()
+        self._panel._titleLabel.setText(title)
+        ckb = self._panel.checkbox()
+        if ckb is not None:
+            ckb.setText(title)
+        self._panel.updateHeaderVisibility()
 
-    def title(self): return self._title
-    def setAnimated(self, animated): self._animated = animated
-    def isAnimated(self): return self._animated
-    def setAutohide(self, mode): self._autohide = mode; self._initAutohide()
-    def autohide(self): return self._autohide
-    def isExpanded(self): return self._expanded
-    def expandedSize(self): return self._expanded_size
+    def title(self) -> str: return self._title
 
-    def setExpandedSize(self, size):
-        """设置展开尺寸。展开态时立即动画过渡；收起态只记录。"""
+    def setCheckboxVisible(self, visible: bool):
+        """设置 CheckBox 可见性。不可见时不占空间；收起态下自动重测折叠尺寸"""
+        if self._checkbox_visible == visible:
+            return
+        self._checkbox_visible = visible
+        self._ensurePanel()
+        if not self._expanded:
+            # 收起态：先重测折叠尺寸（测量后布局停在收起态），再恢复并应用
+            self._measureCollapsedSize()
+            self._panel.applyHeaderLayout(False)
+            self._setPlaceholderSize(self._collapsed_size)
+            self._setPanelRect(self._collapsed_size)
+        else:
+            self._panel.applyHeaderLayout(True)
+        self._panel.updateHeaderVisibility()
+
+    def checkboxVisible(self) -> bool: return self._checkbox_visible
+    def setAnimated(self, animated: bool): self._animated = animated
+    def isAnimated(self) -> bool: return self._animated
+
+    def setAutohide(self, mode: AutoHideMode):
+        self._autohide = mode
+        self._initAutohide()
+
+    def autohide(self) -> AutoHideMode: return self._autohide
+    def isExpanded(self) -> bool: return self._expanded
+    def expandedSize(self) -> int: return self._expanded_size
+
+    def setExpandedSize(self, size: int):
+        """设置展开尺寸。展开态时立即动画过渡；收起态只记录"""
         size = max(self.MIN_EXPANDED_SIZE, size)
         if size == self._expanded_size:
             return
@@ -956,7 +1108,7 @@ class FluentDrawer(QFrame):
             return
         current = self._currentSize()
 
-        def on_value(v): self._applySize(int(v), floating)
+        def on_value(v: int): self._applySize(int(v), floating)
 
         def on_finished():
             self._applySize(size, floating)
@@ -965,7 +1117,11 @@ class FluentDrawer(QFrame):
 
         self._run_size_animation(current, size, 200, on_value, on_finished)
 
-    def checkbox(self): return self._panel.checkbox() if self._panel else None
-    def headerWidget(self): return self._panel.headerWidget() if self._panel else None
-    def panel(self): return self._panel
-    def side(self): return self._side
+    def checkbox(self) -> CheckBox: return self._panel.checkbox()
+
+    def headerWidget(self) -> QFrame | None:
+        self._ensurePanel()
+        return self._panel.headerWidget()
+
+    def panel(self) -> DrawerPanel | None: return self._panel
+    def side(self) -> DrawerSide: return self._side
